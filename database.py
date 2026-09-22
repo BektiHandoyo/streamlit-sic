@@ -34,3 +34,13 @@ def update_task_status(
     df.loc[df["id"] == task_id, "is_completed"] = status
     save_data(df)
     return df
+
+def delete_task(df: pd.DataFrame, task_id: int) -> pd.DataFrame:
+    df_updated = df[df["id"] != task_id].reset_index(drop=True)
+    save_data(df_updated)
+    return df_updated
+
+def reset_weekly_tasks(df: pd.DataFrame) -> pd.DataFrame:
+    df["is_completed"] = False
+    save_data(df)
+    return df

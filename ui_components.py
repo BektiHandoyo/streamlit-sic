@@ -6,7 +6,7 @@ from helpers import DAYS_LIST, get_today_name
 
 
 def render_sidebar_form():
-    st.sidebar.header("+ Tambah Tugas Rutin")
+    st.sidebar.header("➕ Tambah Tugas Rutin")
 
     with st.sidebar.form(key="add_task_form", clear_on_submit=True):
         task_input = st.text_input(
@@ -20,7 +20,7 @@ def render_sidebar_form():
 
     if submit_button:
         if task_input.strip() == "":
-            st.sidebar.error("Nama tugas tidak boleh kosong!")
+            st.sidebar.error("❌ Nama tugas tidak boleh kosong!")
         else:
             new_task = {
                 "id": int(time.time() * 1000),
@@ -32,13 +32,21 @@ def render_sidebar_form():
             st.session_state.tasks_df = add_task(
                 st.session_state.tasks_df, new_task
             )
-            st.sidebar.success("Tugas berhasil ditambahkan!")
+            st.sidebar.success("✅ Tugas berhasil ditambahkan!")
             st.rerun()
 
+    st.sidebar.markdown("---")
+    st.sidebar.header("🗑️ Reset Task")
+    if st.sidebar.button("🔄 Reset Status Mingguan", use_container_width=True):
+        st.session_state.tasks_df = reset_weekly_tasks(
+            st.session_state.tasks_df
+        )
+        st.sidebar.success("✅ Seluruh tugas dikembalikan ke status 'Pending'!")
+        st.rerun()
 
 def render_today_tasks():
     today_name = get_today_name()
-    st.write(f"## Tugas Hari Ini ({today_name})")
+    st.write(f"## 🌟 Tugas Hari Ini ({today_name})")
 
     df_today = st.session_state.tasks_df[
         st.session_state.tasks_df["day"] == today_name
@@ -50,22 +58,22 @@ def render_today_tasks():
         )
         return
 
-    for _, row in df_today.iterrows():
-        label_text = f"**{row['task']}**" + (
-            f" — *{row['description']}*" if row["description"] else ""
-        )
-        checked = st.checkbox(
-            label=label_text,
-            value=row["is_completed"],
-            key=f"today_{row['id']}",
-        )
+    edited_df = st.data_editor(
+        df_today,
+        key="table_today",
+        hide_index=True,
+        use_container_width=True,
+        num_rows="dynamic",
+        column_config={
+            "id": None,
+            "task": st.column_config.TextColumn("Nama Tugas"),
+            "description": st.column_config.TextColumn("Deskripsi"),
+            "day": None,
+            "is_completed": st.column_config.CheckboxColumn("Selesai"),
+        },
+    )
 
-        if checked != row["is_completed"]:
-            st.session_state.tasks_df = update_task_status(
-                st.session_state.tasks_df, row["id"], checked
-            )
-            st.rerun()
-
+    _sync_table_changes(df_today, edited_df)
 
 def render_weekly_schedule():
     today_name = get_today_name()
@@ -113,3 +121,24 @@ def render_weekly_schedule():
                             row["is_completed"],
                         )
                         st.rerun()
+
+def _sync_table_changes(original_df: pd.DataFrame, edited_df: pd.DataFrame):
+    original_ids = set(original_df["id"])
+    edited_ids = set(edited_df["id"])
+    deleted_ids = original_ids - edited_ids
+
+    if deleted_ids:
+        for del_id in deleted_ids:
+            st.session_state.tasks_df = delete_task(
+                st.session_state.tasks_df, del_id
+            )
+        st.rerun()
+
+    for _, row in edited_df.iterrows():
+        orig_row = original_df[original_df["id"] == row["id"]]
+        if not orig_row.empty:
+            if row["is_completed"] != orig_row.iloc[0]["is_completed"]:
+                st.session_state.tasks_df = update_task_status(
+                    st.session_state.tasks_df, row["id"], row["is_completed"]
+                )
+                st.rerun()
