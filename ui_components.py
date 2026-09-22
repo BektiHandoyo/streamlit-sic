@@ -2,7 +2,7 @@ import time
 import pandas as pd
 import streamlit as st
 from database import add_task, update_task_status
-from helpers import DAYS_LIST, get_today_name
+from helpers import DAYS_LIST, get_today_name, calculate_progress
 
 
 def render_sidebar_form():
@@ -43,6 +43,41 @@ def render_sidebar_form():
         )
         st.sidebar.success("✅ Seluruh tugas dikembalikan ke status 'Pending'!")
         st.rerun()
+
+def render_dashboard_metrics():
+    today_name = get_today_name()
+    df_all = st.session_state.tasks_df
+    df_today = df_all[df_all["day"] == today_name]
+
+    tot_today, comp_today, pct_today = calculate_progress(df_today)
+    tot_week, comp_week, pct_week = calculate_progress(df_all)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader(f"📊 Progress Hari Ini ({today_name})")
+        if tot_today > 0:
+            st.metric(
+                label="Tugas Selesai",
+                value=f"{comp_today} / {tot_today}",
+                delta=f"{int(pct_today * 100)}%",
+            )
+            st.progress(pct_today)
+        else:
+            st.caption("Belum ada tugas untuk hari ini.")
+
+    with col2:
+        st.subheader("🗓️ Progress Minggu Ini")
+        if tot_week > 0:
+            st.metric(
+                label="Total Tugas Seminggu Selesai",
+                value=f"{comp_week} / {tot_week}",
+                delta=f"{int(pct_week * 100)}%",
+            )
+            st.progress(pct_week)
+        else:
+            st.caption("Belum ada tugas rutin mingguan.")
+
 
 def render_today_tasks():
     today_name = get_today_name()
@@ -111,6 +146,8 @@ def render_weekly_schedule():
                         ),
                     },
                 )
+
+                _sync_table_changes(df_day, edited_df)
 
                 for index, row in edited_df.iterrows():
                     original_row = df_day[df_day["id"] == row["id"]].iloc[0]
