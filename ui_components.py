@@ -1,7 +1,7 @@
 import time
 import pandas as pd
 import streamlit as st
-from database import add_task, update_task_status
+from database import add_task, update_task_status, reset_weekly_tasks, delete_task
 from helpers import DAYS_LIST, get_today_name, calculate_progress
 
 
