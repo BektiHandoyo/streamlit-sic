@@ -1,26 +1,38 @@
-import streamlit as st
-import csv
 import os
+import pandas as pd
+import streamlit as st
 
-st.title("Aplikasi Pencatat Nilai Siswa")
-st.write("Selamat datang! Silakan isi data siswa di bawah ini.")
+CSV_FILE = "todo_routine.csv"
 
-nama = st.text_input("Nama siswa")
-nilai = st.number_input("Nilai", min_value=0, max_value=100, step=1)
+COLUMNS = ["id", "task", "description", "day", "is_completed"]
 
-FILE_CSV = "nilai_siswa_app.csv"
 
-if st.button("Simpan"):
-    status = "Lulus" if nilai >= 75 else "Belum Lulus"
-    with open(FILE_CSV, mode="a", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([nama, nilai, status])
-    st.success(f"Data {nama} berhasil disimpan dengan status: {status}")
+def load_data() -> pd.DataFrame:
+    if not os.path.exists(CSV_FILE):
+        df = pd.DataFrame(columns=COLUMNS)
+        df.to_csv(CSV_FILE, index=False)
+        return df
+    else:
+        df = pd.read_csv(CSV_FILE)
+        if not df.empty:
+            df["is_completed"] = df["is_completed"].astype(bool)
+        return df
 
-st.subheader("Riwayat Data Siswa")
-if os.path.exists(FILE_CSV):
-    with open(FILE_CSV) as f:
-        data = list(csv.reader(f))
-    st.dataframe(data, use_container_width=True)
-else:
-    st.info("Belum ada data yang disimpan.")    
+
+def save_data(df: pd.DataFrame):
+    df.to_csv(CSV_FILE, index=False)
+
+
+
+st.set_page_config(page_title="Weekly Routine To-Do", page_icon="📅")
+
+if "tasks_df" not in st.session_state:
+    st.session_state.tasks_df = load_data()
+
+st.title("Weekly Routine To-Do List")
+st.caption("Phase 1: Data Engine Setup")
+
+st.subheader("Data Saat Ini (Cek Session State & CSV):")
+st.dataframe(st.session_state.tasks_df, use_container_width=True)
+
+st.success("✅ Fondasi data berhasil dimuat/dibuat!")
