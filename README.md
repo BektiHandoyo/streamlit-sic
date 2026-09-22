@@ -1,5 +1,7 @@
 # 📄 Dokumentasi Proyek: Weekly Routine To-Do List
 
+![My Image](https://raw.githubusercontent.com/BektiHandoyo/streamlit-sic/refs/heads/master/screenshoot.png)
+
 Aplikasi pencatat dan pemantau jadwal rutin mingguan berbasis web interaktif yang dibangun menggunakan **Python**, **Streamlit**, dan **Pandas** dengan penyimpanan basis data lokal berbasis file **CSV**.
 
 ---
